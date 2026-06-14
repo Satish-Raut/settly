@@ -10,9 +10,11 @@ import {
   cancelImport 
 } from '../store/slices/importSlice';
 import { bulkAddExpenses } from '../store/slices/expensesSlice';
+import { useNavigate } from 'react-router-dom';
 
-const ImportWizard = ({ setCurrentPage }) => {
+const ImportWizard = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const fileInputRef = useRef(null);
   
   const { stagedExpenses, anomalies, importSession, isParsed, loading, error } = useSelector((state) => state.import);
@@ -108,7 +110,7 @@ const ImportWizard = ({ setCurrentPage }) => {
 
     generateImportReportFile();
     dispatch(completeImport());
-    setCurrentPage('dashboard');
+    navigate('/dashboard');
   };
 
   // Helper to generate text file download for Meera's report
@@ -155,7 +157,7 @@ const ImportWizard = ({ setCurrentPage }) => {
       {/* Header Bar */}
       <header className="w-full px-8 py-6 bg-white">
         <div className="max-w-4xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentPage('home')}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
             <span className="text-3xl font-extrabold text-brand tracking-tight font-serif">
               settly<span className="text-brand">.</span>
             </span>
@@ -164,7 +166,7 @@ const ImportWizard = ({ setCurrentPage }) => {
           {/* Navigation aligned to the right */}
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => setCurrentPage('dashboard')} 
+              onClick={() => navigate('/dashboard')} 
               className="nav-item-glow px-4 py-1.5 border border-slate-200 rounded-lg text-xs font-bold transition-all bg-white cursor-pointer"
             >
               ← Back to Dashboard

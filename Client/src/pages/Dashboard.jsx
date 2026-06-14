@@ -5,9 +5,11 @@ import { selectBalancesForGroup, deleteExpense, addSettlement } from '../store/s
 import MembershipTimeline from '../components/groups/MembershipTimeline';
 import AddExpenseForm from '../components/expenses/AddExpenseForm';
 import AuditTrailDetail from '../components/expenses/AuditTrailDetail';
+import { useNavigate } from 'react-router-dom';
 
-const Dashboard = ({ setCurrentPage }) => {
+const Dashboard = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { currentUser, isAuthenticated } = useSelector((state) => state.auth);
   const selectedGroupId = useSelector((state) => state.groups.selectedGroupId);
   const group = useSelector(state => state.groups.groups.find(g => g.id === selectedGroupId));
@@ -53,7 +55,7 @@ const Dashboard = ({ setCurrentPage }) => {
       {/* Header Bar */}
       <header className="w-full px-8 py-6 bg-white">
         <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentPage('home')}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
             <span className="text-3xl font-extrabold text-brand tracking-tight font-serif">
               settly<span className="text-brand">.</span>
             </span>
@@ -62,10 +64,10 @@ const Dashboard = ({ setCurrentPage }) => {
           {/* Navigations & Profile aligned to the right */}
           <div className="flex items-center gap-6 md:gap-10">
             <nav className="hidden md:flex items-center gap-4 text-sm font-semibold text-slate-500">
-              <button onClick={() => setCurrentPage('home')} className="nav-item-glow cursor-pointer">Home</button>
+              <button onClick={() => navigate('/')} className="nav-item-glow cursor-pointer">Home</button>
               <button 
                 onClick={() => {
-                  setCurrentPage('dashboard');
+                  navigate('/dashboard');
                   setActiveTab('ledger');
                 }} 
                 className={`nav-item-glow cursor-pointer ${activeTab === 'ledger' ? 'text-brand font-bold' : ''}`}
@@ -74,14 +76,14 @@ const Dashboard = ({ setCurrentPage }) => {
               </button>
               <button 
                 onClick={() => {
-                  setCurrentPage('dashboard');
+                  navigate('/dashboard');
                   setActiveTab('timeline');
                 }} 
                 className={`nav-item-glow cursor-pointer ${activeTab === 'timeline' ? 'text-brand font-bold' : ''}`}
               >
                 Groups
               </button>
-              <button onClick={() => setCurrentPage('import')} className="nav-item-glow cursor-pointer">CSV Importer</button>
+              <button onClick={() => navigate('/import')} className="nav-item-glow cursor-pointer">CSV Importer</button>
             </nav>
 
             {/* Profile */}
@@ -93,7 +95,7 @@ const Dashboard = ({ setCurrentPage }) => {
                   title="Logout" 
                   onClick={() => {
                     dispatch(logout());
-                    setCurrentPage('home');
+                    navigate('/');
                   }}
                 >
                   {currentUser.avatar}
@@ -173,7 +175,7 @@ const Dashboard = ({ setCurrentPage }) => {
                 <p className="text-xs text-brand-light/75 mt-1">Detect duplicate charges, ambiguous formatting, or temporal membership split overlaps.</p>
               </div>
               <button 
-                onClick={() => setCurrentPage('import')} 
+                onClick={() => navigate('/import')} 
                 className="w-full py-2.5 bg-yellow-400 hover:bg-yellow-500 text-brand-dark text-xs font-bold rounded-lg transition-colors shadow-md shadow-brand/20 cursor-pointer"
               >
                 Go to CSV Importer →
