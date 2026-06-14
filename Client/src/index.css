@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@300..800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", sans-serif;
+  --font-serif: "Lora", serif;
+  --color-brand: #7c3aed;
+  --color-brand-light: #f5f3ff;
+  --color-brand-dark: #6d28d9;
+  --color-brand-text: #4c1d95;
+}
+
+body {
+  background-color: #ffffff;
+  margin: 0;
+  font-family: var(--font-sans);
+}
+
+/* Custom micro-animations for premium feel */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Glassmorphic border utilities */
+.border-glass {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Premium blur purple glow hover effect for nav items */
+.nav-item-glow {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 6px 16px;
+  margin: 0 -4px;
+  border-radius: 9999px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.nav-item-glow:hover {
+  color: var(--color-brand) !important;
+  text-shadow: 0 0 8px rgba(124, 58, 237, 0.4);
+}
+
+.nav-item-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(124, 58, 237, 0.06);
+  border-radius: 9999px;
+  filter: blur(4px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
+  transform: scale(0.9);
+}
+
+.nav-item-glow:hover::after {
+  opacity: 1;
+  transform: scale(1.05);
+  background-color: rgba(124, 58, 237, 0.12);
+  box-shadow: 0 0 14px 2px rgba(124, 58, 237, 0.3);
+}
+
+/* Ghibli floating animations */
+@keyframes floatUpAndDown {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes floatDownAndUp {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(12px) rotate(-3deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.animate-float-slow {
+  animation: floatUpAndDown 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: floatDownAndUp 7s ease-in-out infinite;
+}
