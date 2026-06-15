@@ -86,7 +86,7 @@ function hasDescriptionSimilarity(desc1, desc2) {
 }
 
 // Primary processing pipeline
-export async function parseAndAuditCSV(csvText, dbUsers, dbMemberships) {
+export async function parseAndAuditCSV(csvText, dbUsers, dbMemberships, groupId) {
   // Parse CSV
   const parseResult = Papa.parse(csvText, {
     header: true,

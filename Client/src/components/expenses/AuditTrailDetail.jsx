@@ -24,14 +24,10 @@ const AuditTrailDetail = ({ auditTrail, groupMemberships, onClose }) => {
     return joined > targetDate || (left && targetDate > left);
   });
 
+  // Resolve username dynamically from memberships prop
   const getUserName = (uid) => {
-    if (uid === 1) return 'Aisha';
-    if (uid === 2) return 'Rohan';
-    if (uid === 3) return 'Priya';
-    if (uid === 4) return 'Meera';
-    if (uid === 5) return 'Sam';
-    if (uid === 6) return 'Dev';
-    return `User ${uid}`;
+    const member = groupMemberships.find(m => m.userId === uid);
+    return member?.username || `User ${uid}`;
   };
 
   return (
@@ -40,7 +36,7 @@ const AuditTrailDetail = ({ auditTrail, groupMemberships, onClose }) => {
         <div className="px-6 py-4 bg-brand-light border-b border-slate-100 flex items-center justify-between">
           <div>
             <h3 className="font-bold font-serif text-slate-800 text-lg">Math Calculation Audit Trail</h3>
-            <p className="text-xs text-brand">Rohan's Request: Full ledger verification trace</p>
+            <p className="text-xs text-brand">Full split calculation audit trail</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer">×</button>
         </div>

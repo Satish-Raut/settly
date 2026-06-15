@@ -35,7 +35,7 @@ router.post('/import/csv', verifyToken, upload.single('file'), async (req, res) 
 
     // 3. Parse and audit CSV text
     const csvText = req.file.buffer.toString('utf-8');
-    const auditedRows = await parseAndAuditCSV(csvText, allUsers, memberships);
+    const auditedRows = await parseAndAuditCSV(csvText, allUsers, memberships, parsedGroupId);
 
     // 4. Create import session
     const [importSession] = await db
