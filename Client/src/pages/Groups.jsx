@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { createGroup, selectGroup } from "../store/slices/groupsSlice";
-import { logout } from "../store/slices/authSlice";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 const Groups = () => {
   const dispatch = useDispatch();
@@ -16,7 +16,6 @@ const Groups = () => {
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [memberJoinDates, setMemberJoinDates] = useState({}); // { [userId]: 'YYYY-MM-DD' }
   const [errorMsg, setErrorMsg] = useState("");
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   if (!currentUser) {
     return (
@@ -101,62 +100,7 @@ const Groups = () => {
 
   return (
     <div className="w-full bg-white text-slate-800 font-sans selection:bg-brand-light min-h-screen">
-      {/* Header Bar */}
-      <header className="w-full px-8 py-6 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-            <span className="text-3xl font-extrabold text-brand tracking-tight font-serif">
-              settly<span className="text-brand">.</span>
-            </span>
-          </div>
-
-          {/* Navigation right-aligned */}
-          <div className="flex items-center gap-6 md:gap-10">
-            <nav className="hidden md:flex items-center gap-4 text-sm font-semibold text-slate-500">
-              <button onClick={() => navigate("/")} className="nav-item-glow cursor-pointer">Home</button>
-              <button onClick={() => navigate("/dashboard")} className="nav-item-glow cursor-pointer">Dashboard</button>
-              <button onClick={() => navigate("/groups")} className="nav-item-glow text-brand font-bold cursor-pointer">Groups</button>
-              <button onClick={() => navigate("/import")} className="nav-item-glow cursor-pointer">CSV Importer</button>
-            </nav>
-
-            {/* Profile Dropdown */}
-            <div className="flex items-center gap-4 relative">
-              <div
-                className="flex items-center gap-3 bg-brand-light border border-brand-light rounded-full py-1.5 pl-3 pr-2 cursor-pointer select-none"
-                onClick={() => setShowProfileMenu(prev => !prev)}
-              >
-                <span className="text-xs font-bold text-brand-text">Hi, {currentUser.username}!</span>
-                <div
-                  className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold shadow-md hover:bg-brand-dark transition-colors"
-                  title="Profile & Settings"
-                >
-                  {currentUser.avatar}
-                </div>
-              </div>
-              {showProfileMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
-                  <div className="absolute right-0 top-12 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                    <button
-                      onClick={() => { setShowProfileMenu(false); navigate('/profile'); }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-brand-light hover:text-brand transition-colors cursor-pointer"
-                    >
-                      <span>👤</span> View Profile
-                    </button>
-                    <div className="border-t border-slate-100" />
-                    <button
-                      onClick={() => { setShowProfileMenu(false); dispatch(logout()); navigate('/'); }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                    >
-                      <span>🚪</span> Sign Out
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-8 py-12">

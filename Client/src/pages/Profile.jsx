@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../store/slices/authSlice';
+import Navbar from '../components/Navbar';
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -29,26 +30,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-purple-50/30 to-slate-100 font-sans">
-
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-8 h-16 flex items-center justify-between">
-          <button onClick={() => navigate('/')} className="text-2xl font-black font-serif text-brand tracking-tight cursor-pointer">
-            settly.
-          </button>
-          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-500">
-            <button onClick={() => navigate('/dashboard')} className="hover:text-brand transition-colors cursor-pointer">Dashboard</button>
-            <button onClick={() => navigate('/groups')} className="hover:text-brand transition-colors cursor-pointer">Groups</button>
-            <button onClick={() => navigate('/import')} className="hover:text-brand transition-colors cursor-pointer">CSV Importer</button>
-          </nav>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 text-xs font-bold text-rose-600 border border-rose-200 rounded-full hover:bg-rose-50 transition-colors cursor-pointer"
-          >
-            Sign Out
-          </button>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-5xl mx-auto px-8 py-12">
 

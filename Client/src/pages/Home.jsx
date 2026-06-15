@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { logout, login } from "../store/slices/authSlice";
+import { login } from "../store/slices/authSlice";
 import { selectBalancesForGroup } from "../store/slices/expensesSlice";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -14,7 +15,6 @@ const Home = () => {
   const { netBalances, simplifiedDebts } = useSelector((state) =>
     selectBalancesForGroup(state, selectedGroupId),
   );
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const handleQuickLogin = (email) => {
     dispatch(login({ email, password: "password123" }));
@@ -23,115 +23,7 @@ const Home = () => {
 
   return (
     <div className="w-full bg-white text-slate-800 font-sans selection:bg-brand-light">
-      {/* Header Bar */}
-      <header className="w-full px-8 py-6 bg-white">
-        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => navigate("/")}
-          >
-            <span className="text-3xl font-extrabold text-brand tracking-tight font-serif">
-              settly<span className="text-brand">.</span>
-            </span>
-          </div>
-
-          {/* Navigations & Auth status aligned to the right */}
-          <div className="flex items-center gap-6 md:gap-10">
-            <nav className="hidden md:flex items-center gap-4 text-sm font-semibold text-slate-500">
-              <button
-                onClick={() => navigate("/")}
-                className="nav-item-glow text-brand cursor-pointer"
-              >
-                Home
-              </button>
-              <button
-                onClick={() => {
-                  if (isAuthenticated) navigate("/dashboard");
-                  else navigate("/login");
-                }}
-                className="nav-item-glow cursor-pointer"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => {
-                  if (isAuthenticated) navigate("/groups");
-                  else navigate("/login");
-                }}
-                className="nav-item-glow cursor-pointer"
-              >
-                Groups
-              </button>
-              <button
-                onClick={() => {
-                  if (isAuthenticated) navigate("/dashboard");
-                  else navigate("/login");
-                }}
-                className="nav-item-glow cursor-pointer"
-              >
-                CSV Importer
-              </button>
-            </nav>
-
-            {/* Auth status buttons */}
-            <div className="flex items-center gap-4">
-              {isAuthenticated && currentUser ? (
-                <div className="relative">
-                  <div
-                    className="flex items-center gap-3 bg-brand-light border border-brand-light rounded-full py-1.5 pl-3 pr-2 cursor-pointer select-none"
-                    onClick={() => setShowProfileMenu(prev => !prev)}
-                  >
-                    <span className="text-xs font-bold text-brand-text">
-                      Hi, {currentUser.username}!
-                    </span>
-                    <div
-                      className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold shadow-md hover:bg-brand-dark transition-colors"
-                      title="Profile & Settings"
-                    >
-                      {currentUser.avatar}
-                    </div>
-                  </div>
-                  {showProfileMenu && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
-                      <div className="absolute right-0 top-12 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                        <button
-                          onClick={() => { setShowProfileMenu(false); navigate('/profile'); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-brand-light hover:text-brand transition-colors cursor-pointer"
-                        >
-                          <span>👤</span> View Profile
-                        </button>
-                        <div className="border-t border-slate-100" />
-                        <button
-                          onClick={() => { setShowProfileMenu(false); dispatch(logout()); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                        >
-                          <span>🚪</span> Sign Out
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <button
-                    onClick={() => navigate("/login")}
-                    className="px-6 py-2.5 text-sm font-semibold border border-slate-200 rounded-full hover:border-brand hover:text-brand text-slate-700 transition-all cursor-pointer"
-                  >
-                    Login
-                  </button>
-                  <button
-                    onClick={() => navigate("/signup")}
-                    className="px-6 py-2.5 text-sm font-bold text-brand bg-brand-light hover:bg-brand/15 rounded-full transition-all cursor-pointer"
-                  >
-                    Signup
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="relative px-8 pt-36 pb-24 flex flex-col items-center text-center max-w-5xl mx-auto z-10">

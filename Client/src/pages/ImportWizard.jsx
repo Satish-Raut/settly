@@ -9,6 +9,7 @@ import {
 } from "../store/slices/importSlice";
 import { bulkAddExpenses } from "../store/slices/expensesSlice";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 const ImportWizard = () => {
   const dispatch = useDispatch();
@@ -101,21 +102,52 @@ const ImportWizard = () => {
           importId: importSession.id,
           resolutions: resolutionsMap,
         }),
-      ).unwrap();
+      );
 
-      if (result && result.report) {
-        generateImportReportFile(result.report, importSession.filename);
+      if (finalizeStagedImport.fulfilled.match(result)) {
+        // Success
+        dispatch(
+          bulkAddExpenses({
+            expenses: [],
+            settlements: [],
+          }),
+        );
+        navigate("/dashboard");
+      } else {
+        setFinalizeError(result.payload || "Failed to finalize import");
       }
-      navigate("/dashboard");
     } catch (err) {
-      setFinalizeError(typeof err === 'string' ? err : (err?.message || 'Import failed. Check server logs for details.'));
+      setFinalizeError(err.message || "An unexpected error occurred");
+    } finally {
       setFinalizing(false);
     }
   };
 
-  // Helper to generate a text file download for the import report
-  const generateImportReportFile = (reportText, filename) => {
-    const blob = new Blob([reportText], { type: "text/plain;charset=utf-8" });
+  const handleDownloadReport = () => {
+    if (!importSession) return;
+    const filename = importSession.filename || "import";
+    const reportText = stagedExpenses
+      .map((staged) => {
+        const rowAnomalies = anomalies.filter(
+          (a) => a.stagedExpenseId === staged.id,
+        );
+        const choice = staged.isExcluded ? "SKIPPED" : "IMPORTED";
+        const anomaliesDesc =
+          rowAnomalies.length > 0
+            ? rowAnomalies
+                .map(
+                  (a) =>
+                    `[Anomaly: ${a.anomalyType}] ${a.description} -> Resolution Action: ${a.resolutionAction || "RESOLVED_AND_IMPORTED"}`,
+                )
+                .join("\n      ")
+            : "No anomalies detected.";
+
+        return `Row ${staged.rowNumber}: ${staged.description} (${staged.currency} ${staged.amount}) - Status: ${choice}
+      ${anomaliesDesc}`;
+      })
+      .join("\n\n");
+
+    const blob = new Blob([reportText], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -131,29 +163,7 @@ const ImportWizard = () => {
 
   return (
     <div className="w-full bg-white text-slate-800 font-sans pb-16">
-      {/* Header Bar */}
-      <header className="w-full px-8 py-6 bg-white">
-        <div className="max-w-4xl mx-auto w-full flex items-center justify-between">
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => navigate("/")}
-          >
-            <span className="text-3xl font-extrabold text-brand tracking-tight font-serif">
-              settly<span className="text-brand">.</span>
-            </span>
-          </div>
-
-          {/* Navigation aligned to the right */}
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="nav-item-glow px-4 py-1.5 border border-slate-200 rounded-lg text-xs font-bold transition-all bg-white cursor-pointer"
-            >
-              ← Back to Dashboard
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <div className="max-w-4xl mx-auto px-8 mt-10">
         <h2 className="text-3xl font-extrabold font-serif text-slate-900 tracking-tight">

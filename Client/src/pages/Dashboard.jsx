@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../store/slices/authSlice';
 import { selectBalancesForGroup, selectExpensesForGroup, deleteExpense, addSettlement, fetchExpenses, fetchBalances } from '../store/slices/expensesSlice';
 import MembershipTimeline from '../components/groups/MembershipTimeline';
 import AddExpenseForm from '../components/expenses/AddExpenseForm';
 import AuditTrailDetail from '../components/expenses/AuditTrailDetail';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -20,7 +20,6 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('ledger'); // 'ledger' | 'timeline'
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [selectedAuditId, setSelectedAuditId] = useState(null);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   // Settlement dialog inputs
   const [settleDebtData, setSettleDebtData] = useState(null); // { fromId, toId, amount, fromName, toName }
@@ -94,78 +93,7 @@ const Dashboard = () => {
 
   return (
     <div className="w-full bg-white text-slate-800 font-sans">
-      
-      {/* Header Bar */}
-      <header className="w-full px-8 py-6 bg-white">
-        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-            <span className="text-3xl font-extrabold text-brand tracking-tight font-serif">
-              settly<span className="text-brand">.</span>
-            </span>
-          </div>
-          
-          {/* Navigations & Profile aligned to the right */}
-          <div className="flex items-center gap-6 md:gap-10">
-            <nav className="hidden md:flex items-center gap-4 text-sm font-semibold text-slate-500">
-              <button onClick={() => navigate('/')} className="nav-item-glow cursor-pointer">Home</button>
-              <button 
-                onClick={() => {
-                  navigate('/dashboard');
-                  setActiveTab('ledger');
-                }} 
-                className={`nav-item-glow cursor-pointer ${activeTab === 'ledger' ? 'text-brand font-bold' : ''}`}
-              >
-                Dashboard
-              </button>
-              <button 
-                onClick={() => {
-                  navigate('/groups');
-                }} 
-                className="nav-item-glow cursor-pointer"
-              >
-                Groups
-              </button>
-              <button onClick={() => navigate('/import')} className="nav-item-glow cursor-pointer">CSV Importer</button>
-            </nav>
-
-            {/* Profile Dropdown */}
-            <div className="flex items-center gap-4 relative">
-              <div
-                className="flex items-center gap-3 bg-brand-light border border-brand-light rounded-full py-1.5 pl-3 pr-2 cursor-pointer select-none"
-                onClick={() => setShowProfileMenu(prev => !prev)}
-              >
-                <span className="text-xs font-bold text-brand-text">Hi, {currentUser.username}!</span>
-                <div
-                  className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold shadow-md hover:bg-brand-dark transition-colors"
-                  title="Profile & Settings"
-                >
-                  {currentUser.avatar}
-                </div>
-              </div>
-              {showProfileMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
-                  <div className="absolute right-0 top-12 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                    <button
-                      onClick={() => { setShowProfileMenu(false); navigate('/profile'); }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-brand-light hover:text-brand transition-colors cursor-pointer"
-                    >
-                      <span>👤</span> View Profile
-                    </button>
-                    <div className="border-t border-slate-100" />
-                    <button
-                      onClick={() => { setShowProfileMenu(false); dispatch(logout()); navigate('/'); }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                    >
-                      <span>🚪</span> Sign Out
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <div className="max-w-7xl mx-auto px-8 py-10">
         
