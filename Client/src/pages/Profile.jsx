@@ -28,7 +28,7 @@ const Profile = () => {
   const avatarColor = avatarColors[currentUser.id % avatarColors.length] || '#7C3AED';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-slate-100 font-sans">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-purple-50/30 to-slate-100 font-sans">
 
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30">
@@ -55,7 +55,7 @@ const Profile = () => {
         {/* Profile Hero Card */}
         <div className="relative bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-8">
           {/* Gradient banner */}
-          <div className="h-32 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-500" />
+          <div className="h-32 bg-linear-to-r from-violet-600 via-purple-600 to-indigo-500" />
 
           <div className="px-8 pb-8">
             {/* Avatar overlapping banner */}
@@ -98,7 +98,7 @@ const Profile = () => {
             { label: 'Total Members Across Groups', value: totalMemberships, icon: '🤝', color: 'from-sky-50 to-blue-50 border-sky-100' },
             { label: 'Account Status', value: 'Verified', icon: '✅', color: 'from-emerald-50 to-green-50 border-emerald-100' },
           ].map((stat) => (
-            <div key={stat.label} className={`bg-gradient-to-br ${stat.color} border rounded-2xl p-5`}>
+            <div key={stat.label} className={`bg-linear-to-br ${stat.color} border rounded-2xl p-5`}>
               <div className="text-2xl mb-2">{stat.icon}</div>
               <div className="text-2xl font-extrabold text-slate-800">{stat.value}</div>
               <div className="text-xs text-slate-500 font-semibold mt-0.5">{stat.label}</div>
@@ -170,7 +170,7 @@ const Profile = () => {
                           className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-brand/30 hover:bg-brand-light/50 transition-all cursor-pointer group"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
+                            <div className="w-9 h-9 rounded-lg bg-linear-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
                               {g.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
