@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { logout, login } from "../store/slices/authSlice";
 import { selectBalancesForGroup } from "../store/slices/expensesSlice";
@@ -14,6 +14,7 @@ const Home = () => {
   const { netBalances, simplifiedDebts } = useSelector((state) =>
     selectBalancesForGroup(state, selectedGroupId),
   );
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const handleQuickLogin = (email) => {
     dispatch(login({ email, password: "password123" }));
@@ -54,7 +55,7 @@ const Home = () => {
               </button>
               <button
                 onClick={() => {
-                  if (isAuthenticated) navigate("/dashboard");
+                  if (isAuthenticated) navigate("/groups");
                   else navigate("/login");
                 }}
                 className="nav-item-glow cursor-pointer"
@@ -74,18 +75,42 @@ const Home = () => {
 
             {/* Auth status buttons */}
             <div className="flex items-center gap-4">
-              {isAuthenticated ? (
-                <div className="flex items-center gap-3 bg-brand-light border border-brand-light rounded-full py-1.5 pl-3 pr-2">
-                  <span className="text-xs font-bold text-brand-text">
-                    Hi, {currentUser.username}!
-                  </span>
+              {isAuthenticated && currentUser ? (
+                <div className="relative">
                   <div
-                    className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold shadow-md cursor-pointer hover:bg-brand-dark"
-                    title="Logout"
-                    onClick={() => dispatch(logout())}
+                    className="flex items-center gap-3 bg-brand-light border border-brand-light rounded-full py-1.5 pl-3 pr-2 cursor-pointer select-none"
+                    onClick={() => setShowProfileMenu(prev => !prev)}
                   >
-                    {currentUser.avatar}
+                    <span className="text-xs font-bold text-brand-text">
+                      Hi, {currentUser.username}!
+                    </span>
+                    <div
+                      className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold shadow-md hover:bg-brand-dark transition-colors"
+                      title="Profile & Settings"
+                    >
+                      {currentUser.avatar}
+                    </div>
                   </div>
+                  {showProfileMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                      <div className="absolute right-0 top-12 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                        <button
+                          onClick={() => { setShowProfileMenu(false); navigate('/profile'); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-brand-light hover:text-brand transition-colors cursor-pointer"
+                        >
+                          <span>👤</span> View Profile
+                        </button>
+                        <div className="border-t border-slate-100" />
+                        <button
+                          onClick={() => { setShowProfileMenu(false); dispatch(logout()); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        >
+                          <span>🚪</span> Sign Out
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <>
@@ -109,7 +134,7 @@ const Home = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative px-8 pt-16 pb-24 flex flex-col items-center text-center max-w-5xl mx-auto z-10">
+      <section className="relative px-8 pt-36 pb-24 flex flex-col items-center text-center max-w-5xl mx-auto z-10">
         {/* Decorative background purple blur glow blob */}
         <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[380px] h-[220px] bg-brand/8 rounded-full blur-[80px] pointer-events-none select-none -z-10"></div>
 
@@ -479,7 +504,7 @@ const Home = () => {
                   label: "Groups",
                   action: () =>
                     isAuthenticated
-                      ? navigate("/dashboard")
+                      ? navigate("/groups")
                       : navigate("/login"),
                 },
                 {

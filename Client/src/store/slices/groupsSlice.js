@@ -1,88 +1,138 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { apiCall } from '../../lib/api';
 
-const defaultMemberships = [
-  { userId: 1, joinedAt: '2026-02-01T00:00:00.000Z', leftAt: null }, // Aisha
-  { userId: 2, joinedAt: '2026-02-01T00:00:00.000Z', leftAt: null }, // Rohan
-  { userId: 3, joinedAt: '2026-02-01T00:00:00.000Z', leftAt: null }, // Priya
-  { userId: 4, joinedAt: '2026-02-01T00:00:00.000Z', leftAt: '2026-03-29T23:59:59.999Z' }, // Meera
-  { userId: 5, joinedAt: '2026-04-10T00:00:00.000Z', leftAt: null }, // Sam
-  { userId: 6, joinedAt: '2026-03-08T00:00:00.000Z', leftAt: '2026-03-15T23:59:59.999Z' }, // Dev
-];
-
-const initialGroups = [
-  {
-    id: 1,
-    name: 'Flat 404 & Goa Trip',
-    createdAt: '2026-02-01T00:00:00.000Z',
-    memberships: defaultMemberships,
+// Async Thunks
+export const fetchGroups = createAsyncThunk(
+  'groups/fetchGroups',
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await apiCall('/groups');
+      return data; // array of groups with memberships
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
   }
-];
+);
+
+export const createNewGroup = createAsyncThunk(
+  'groups/createNewGroup',
+  async ({ name, members }, { rejectWithValue }) => {
+    try {
+      const data = await apiCall('/groups', {
+        method: 'POST',
+        body: { name, members }
+      });
+      return data; // created group
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+export const addMemberToGroup = createAsyncThunk(
+  'groups/addMemberToGroup',
+  async ({ groupId, userId, joinedAt }, { rejectWithValue }) => {
+    try {
+      const data = await apiCall(`/groups/${groupId}/members`, {
+        method: 'POST',
+        body: { userId, joinedAt }
+      });
+      return { groupId, member: data }; // { groupId, member: { userId, username, joinedAt, leftAt } }
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+export const removeMemberFromGroup = createAsyncThunk(
+  'groups/removeMemberFromGroup',
+  async ({ groupId, userId, leftAt }, { rejectWithValue }) => {
+    try {
+      const data = await apiCall(`/groups/${groupId}/members/${userId}`, {
+        method: 'PATCH',
+        body: { leftAt }
+      });
+      return { groupId, userId, member: data };
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 
 const groupsSlice = createSlice({
   name: 'groups',
   initialState: {
-    groups: initialGroups,
-    selectedGroupId: 1,
+    groups: [],
+    selectedGroupId: null,
     loading: false,
     error: null,
   },
   reducers: {
-    createGroup: (state, action) => {
-      const { name, members } = action.payload; // members is array of { userId, joinedAt, leftAt }
-      const newGroup = {
-        id: state.groups.length + 1,
-        name,
-        createdAt: new Date().toISOString(),
-        memberships: members.map(m => ({
-          userId: m.userId,
-          joinedAt: m.joinedAt || new Date().toISOString(),
-          leftAt: m.leftAt || null,
-        })),
-      };
-      state.groups.push(newGroup);
-      state.selectedGroupId = newGroup.id;
-    },
-    updateMembership: (state, action) => {
-      const { groupId, userId, joinedAt, leftAt } = action.payload;
-      const group = state.groups.find(g => g.id === groupId);
-      if (group) {
-        const membership = group.memberships.find(m => m.userId === userId);
-        if (membership) {
-          membership.joinedAt = joinedAt;
-          membership.leftAt = leftAt;
-        } else {
-          group.memberships.push({ userId, joinedAt, leftAt });
-        }
-      }
-    },
-    addMemberToGroup: (state, action) => {
-      const { groupId, userId, joinedAt } = action.payload;
-      const group = state.groups.find(g => g.id === groupId);
-      if (group) {
-        const existing = group.memberships.find(m => m.userId === userId);
-        if (existing) {
-          existing.joinedAt = joinedAt;
-          existing.leftAt = null; // Re-active
-        } else {
-          group.memberships.push({ userId, joinedAt, leftAt: null });
-        }
-      }
-    },
-    removeMemberFromGroup: (state, action) => {
-      const { groupId, userId, leftAt } = action.payload;
-      const group = state.groups.find(g => g.id === groupId);
-      if (group) {
-        const membership = group.memberships.find(m => m.userId === userId);
-        if (membership) {
-          membership.leftAt = leftAt;
-        }
-      }
-    },
     selectGroup: (state, action) => {
       state.selectedGroupId = action.payload;
     }
+  },
+  extraReducers: (builder) => {
+    builder
+      // Fetch Groups
+      .addCase(fetchGroups.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchGroups.fulfilled, (state, action) => {
+        state.loading = false;
+        state.groups = action.payload;
+        // Auto-select first group if none is selected
+        if (action.payload.length > 0 && !state.selectedGroupId) {
+          state.selectedGroupId = action.payload[0].id;
+        }
+      })
+      .addCase(fetchGroups.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Create Group
+      .addCase(createNewGroup.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createNewGroup.fulfilled, (state, action) => {
+        state.loading = false;
+        state.groups.push(action.payload);
+        state.selectedGroupId = action.payload.id;
+      })
+      .addCase(createNewGroup.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Add member
+      .addCase(addMemberToGroup.fulfilled, (state, action) => {
+        const { groupId, member } = action.payload;
+        const group = state.groups.find(g => g.id === groupId);
+        if (group) {
+          const idx = group.memberships.findIndex(m => m.userId === member.userId);
+          if (idx > -1) {
+            group.memberships[idx] = member;
+          } else {
+            group.memberships.push(member);
+          }
+        }
+      })
+      // Remove member (soft-remove leftAt)
+      .addCase(removeMemberFromGroup.fulfilled, (state, action) => {
+        const { groupId, userId, member } = action.payload;
+        const group = state.groups.find(g => g.id === groupId);
+        if (group) {
+          const idx = group.memberships.findIndex(m => m.userId === userId);
+          if (idx > -1) {
+            group.memberships[idx] = member;
+          }
+        }
+      });
   }
 });
 
-export const { createGroup, updateMembership, addMemberToGroup, removeMemberFromGroup, selectGroup } = groupsSlice.actions;
+export const { selectGroup } = groupsSlice.actions;
+// Backward compatibility aliases
+export const createGroup = ({ name, members }) => createNewGroup({ name, members });
 export default groupsSlice.reducer;

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
-import { selectBalancesForGroup, deleteExpense, addSettlement } from '../store/slices/expensesSlice';
+import { selectBalancesForGroup, selectExpensesForGroup, deleteExpense, addSettlement, fetchExpenses, fetchBalances } from '../store/slices/expensesSlice';
 import MembershipTimeline from '../components/groups/MembershipTimeline';
 import AddExpenseForm from '../components/expenses/AddExpenseForm';
 import AuditTrailDetail from '../components/expenses/AuditTrailDetail';
@@ -12,22 +12,65 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { currentUser, isAuthenticated } = useSelector((state) => state.auth);
   const selectedGroupId = useSelector((state) => state.groups.selectedGroupId);
+  const groupsList = useSelector((state) => state.groups.groups);
+  const groupsLoading = useSelector((state) => state.groups.loading);
   const group = useSelector(state => state.groups.groups.find(g => g.id === selectedGroupId));
-  const expenses = useSelector(state => state.expenses.expenses.filter(e => e.groupId === selectedGroupId));
+  const expenses = useSelector(state => selectExpensesForGroup(state, selectedGroupId));
 
   const [activeTab, setActiveTab] = useState('ledger'); // 'ledger' | 'timeline'
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [selectedAuditId, setSelectedAuditId] = useState(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   // Settlement dialog inputs
   const [settleDebtData, setSettleDebtData] = useState(null); // { fromId, toId, amount, fromName, toName }
-  const [settleDate, setSettleDate] = useState('2026-04-12');
+  const [settleDate, setSettleDate] = useState(new Date().toISOString().split('T')[0]);
 
   const { netBalances, simplifiedDebts, auditTrails } = useSelector((state) => 
     selectBalancesForGroup(state, selectedGroupId)
   );
 
-  if (!group) return <div className="p-6">No group loaded</div>;
+  React.useEffect(() => {
+    if (!groupsLoading && groupsList.length === 0) {
+      navigate('/groups');
+    }
+  }, [groupsList, groupsLoading, navigate]);
+
+  React.useEffect(() => {
+    if (selectedGroupId) {
+      dispatch(fetchExpenses(selectedGroupId));
+      dispatch(fetchBalances(selectedGroupId));
+    }
+  }, [selectedGroupId, dispatch]);
+
+  if (groupsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand mx-auto mb-4"></div>
+          <p className="text-sm font-semibold text-slate-500">Loading roommate groups...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!group) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center p-8 bg-white border border-slate-200 rounded-2xl max-w-sm shadow-sm">
+          <span className="text-4xl block mb-3">👥</span>
+          <h3 className="text-base font-bold text-slate-700">No Group Selected</h3>
+          <p className="text-xs text-slate-400 mt-1">Please select or create a group to view the dashboard.</p>
+          <button
+            onClick={() => navigate('/groups')}
+            className="mt-4 px-4 py-2 bg-brand text-white text-xs font-bold rounded-lg hover:bg-brand-dark cursor-pointer"
+          >
+            Go to Groups
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Find current user's personal net balance
   const myNet = netBalances.find(b => b.userId === currentUser.id)?.netBalance || 0;
@@ -76,31 +119,49 @@ const Dashboard = () => {
               </button>
               <button 
                 onClick={() => {
-                  navigate('/dashboard');
-                  setActiveTab('timeline');
+                  navigate('/groups');
                 }} 
-                className={`nav-item-glow cursor-pointer ${activeTab === 'timeline' ? 'text-brand font-bold' : ''}`}
+                className="nav-item-glow cursor-pointer"
               >
                 Groups
               </button>
               <button onClick={() => navigate('/import')} className="nav-item-glow cursor-pointer">CSV Importer</button>
             </nav>
 
-            {/* Profile */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 bg-brand-light border border-brand-light rounded-full py-1.5 pl-3 pr-2">
+            {/* Profile Dropdown */}
+            <div className="flex items-center gap-4 relative">
+              <div
+                className="flex items-center gap-3 bg-brand-light border border-brand-light rounded-full py-1.5 pl-3 pr-2 cursor-pointer select-none"
+                onClick={() => setShowProfileMenu(prev => !prev)}
+              >
                 <span className="text-xs font-bold text-brand-text">Hi, {currentUser.username}!</span>
-                <div 
-                  className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold shadow-md cursor-pointer hover:bg-brand-dark" 
-                  title="Logout" 
-                  onClick={() => {
-                    dispatch(logout());
-                    navigate('/');
-                  }}
+                <div
+                  className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold shadow-md hover:bg-brand-dark transition-colors"
+                  title="Profile & Settings"
                 >
                   {currentUser.avatar}
                 </div>
               </div>
+              {showProfileMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                  <div className="absolute right-0 top-12 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <button
+                      onClick={() => { setShowProfileMenu(false); navigate('/profile'); }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-brand-light hover:text-brand transition-colors cursor-pointer"
+                    >
+                      <span>👤</span> View Profile
+                    </button>
+                    <div className="border-t border-slate-100" />
+                    <button
+                      onClick={() => { setShowProfileMenu(false); dispatch(logout()); navigate('/'); }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    >
+                      <span>🚪</span> Sign Out
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -1,0 +1,8 @@
+{
+  "schema": "./src/db/schema.js",
+  "out": "./src/db/migrations",
+  "driver": "pg",
+  "dbCredentials": {
+    "connectionString": "postgresql://postgres.prmvjzckzieucbivlssw:Satish%40435498@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres"
+  }
+}

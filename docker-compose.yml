@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: settly-db
+    environment:
+      POSTGRES_DB: settly
+      POSTGRES_USER: settly
+      POSTGRES_PASSWORD: settly
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U settly -d settly"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./Server
+    container_name: settly-api
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgresql://settly:settly@db:5432/settly
+      JWT_SECRET: settly-jwt-secret-key-evaluation-2026-placement
+      PORT: 5000
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "npx prisma db push && npx prisma db seed && node src/index.js"
+
+volumes:
+  pgdata:

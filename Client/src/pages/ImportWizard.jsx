@@ -1,13 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
-  startParsing, 
-  parseCSVSuccess, 
-  parseCSVFailed, 
   resolveAnomaly, 
   excludeStagedRow, 
-  completeImport, 
-  cancelImport 
+  cancelImport,
+  uploadCSVFile,
+  finalizeStagedImport
 } from '../store/slices/importSlice';
 import { bulkAddExpenses } from '../store/slices/expensesSlice';
 import { useNavigate } from 'react-router-dom';
@@ -29,21 +27,7 @@ const ImportWizard = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    dispatch(startParsing());
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const text = evt.target.result;
-      dispatch(parseCSVSuccess({
-        filename: file.name,
-        csvText: text,
-        memberships: group.memberships,
-      }));
-    };
-    reader.onerror = () => {
-      dispatch(parseCSVFailed('Failed to read CSV file'));
-    };
-    reader.readAsText(file);
+    dispatch(uploadCSVFile({ file, groupId: group.id }));
   };
 
   const selectResolutionChoice = (anomaly, choice, resolutionText, updatedStagedData = {}) => {
@@ -60,88 +44,46 @@ const ImportWizard = () => {
   };
 
   // Triggers final import merge into the main store
+  // Triggers final import merge into the database
   const handleFinalizeImport = () => {
-    const activeStagedRows = stagedExpenses.filter(e => !e.isExcluded);
-    
-    // Separate into expenses and settlements based on reclassification
-    const expensesToAdd = [];
-    const settlementsToAdd = [];
+    const resolutionsMap = {};
 
-    activeStagedRows.forEach(row => {
-      if (row.isSettlementClassification) {
-        // Find default settlement payee (usually Aisha for deposit shares or payee name in notes)
-        let payerId = row.paidById;
-        let payeeId = 1; // Default Aisha
+    stagedExpenses.forEach(staged => {
+      const splitWithNames = staged.splitWith.map(uid => users.find(u => u.id === uid)?.username).filter(Boolean).join(';');
+      const splitDetailsNames = Object.entries(staged.splitDetails || {}).map(([uid, val]) => {
+        const u = users.find(user => user.id === parseInt(uid));
+        return u ? `${u.username} ${val}${staged.splitType === 'percentage' ? '%' : ''}` : '';
+      }).filter(Boolean).join(';');
 
-        if (row.description.toLowerCase().includes('sam deposit')) {
-          payerId = 5; // Sam
-          payeeId = 1; // Aisha
-        } else if (row.description.toLowerCase().includes('rohan paid aisha')) {
-          payerId = 2; // Rohan
-          payeeId = 1; // Aisha
-        }
-
-        settlementsToAdd.push({
-          groupId: group.id,
-          payerId,
-          payeeId,
-          amount: row.amount,
-          settlementDate: row.date
-        });
-      } else {
-        expensesToAdd.push({
-          groupId: group.id,
-          description: row.description,
-          amount: row.amount,
-          currency: row.currency,
-          paidById: row.paidById || 1, // Default Aisha if missing/not resolved
-          expenseDate: row.date,
-          splitType: row.splitType,
-          splitWith: row.splitWith,
-          splitDetails: row.splitDetails
-        });
-      }
+      resolutionsMap[staged.id] = {
+        choice: staged.isExcluded ? 'skip' : 'keep',
+        amount: staged.amount,
+        currency: staged.currency,
+        date: staged.date,
+        paidBy: staged.paidBy,
+        splitWith: splitWithNames,
+        splitDetails: splitDetailsNames
+      };
     });
 
-    dispatch(bulkAddExpenses({
-      expenses: expensesToAdd,
-      settlements: settlementsToAdd
-    }));
-
-    generateImportReportFile();
-    dispatch(completeImport());
-    navigate('/dashboard');
+    dispatch(finalizeStagedImport({
+      importId: importSession.id,
+      resolutions: resolutionsMap
+    })).unwrap().then((result) => {
+      if (result && result.report) {
+        generateImportReportFile(result.report, importSession.filename);
+      }
+      navigate('/dashboard');
+    });
   };
 
   // Helper to generate text file download for Meera's report
-  const generateImportReportFile = () => {
-    let reportText = `====================================================\n`;
-    reportText += `           SETTLY LEDGER IMPORT REPORT              \n`;
-    reportText += `====================================================\n`;
-    reportText += `Import Session ID: ${importSession.id}\n`;
-    reportText += `Import Date: ${new Date().toLocaleString()}\n`;
-    reportText += `File Name: ${importSession.filename}\n`;
-    reportText += `Target Group: ${group.name}\n`;
-    reportText += `Total Staged Rows: ${stagedExpenses.length}\n`;
-    reportText += `Imported Rows Count: ${stagedExpenses.filter(e => !e.isExcluded).length}\n`;
-    reportText += `Excluded Rows Count: ${stagedExpenses.filter(e => e.isExcluded).length}\n`;
-    reportText += `----------------------------------------------------\n\n`;
-    reportText += `SURFACED CSV ANOMALIES & AUDIT RESOLUTIONS:\n\n`;
-
-    anomalies.forEach((a, idx) => {
-      reportText += `${idx + 1}. [Row ${a.rowNumber}] [Anomaly: ${a.type}] [Severity: ${a.severity}]\n`;
-      reportText += `   Description: ${a.description}\n`;
-      reportText += `   Resolution Policy Applied: ${a.resolutionAction || 'Default system auto-resolved'}\n\n`;
-    });
-
-    reportText += `====================================================\n`;
-    reportText += `Report generated successfully. Verified by Settly Engine.\n`;
-
+  const generateImportReportFile = (reportText, filename) => {
     const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Import_Report_${importSession.filename.replace('.csv', '')}.txt`;
+    link.download = `Import_Report_${filename.replace('.csv', '')}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

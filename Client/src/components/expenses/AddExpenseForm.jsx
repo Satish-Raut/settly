@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addExpense } from '../../store/slices/expensesSlice';
+import { createExpense, fetchExpenses } from '../../store/slices/expensesSlice';
 
 const AddExpenseForm = ({ groupId, onClose }) => {
   const dispatch = useDispatch();
-  const group = useSelector(state => state.groups.groups.find(g => g.id === groupId));
-  const users = useSelector(state => state.auth.users);
+  // Use Number() to ensure type-safe match (API returns numbers, props may be strings)
+  const group = useSelector(state => state.groups.groups.find(g => g.id === Number(groupId)));
 
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('INR');
   const [paidById, setPaidById] = useState('');
-  const [expenseDate, setExpenseDate] = useState('2026-03-01');
+  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
   const [splitType, setSplitType] = useState('equal');
 
   // Members active on the chosen date
@@ -19,20 +19,24 @@ const AddExpenseForm = ({ groupId, onClose }) => {
   const [selectedSplitIds, setSelectedSplitIds] = useState([]);
   const [splitDetails, setSplitDetails] = useState({}); // { [userId]: value }
   const [formError, setFormError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Update active members list whenever the date changes
   useEffect(() => {
     if (!group) return;
-    const targetDate = new Date(expenseDate);
-    const filtered = group.memberships.filter(m => {
+    // expenseDate is 'YYYY-MM-DD'; parse as UTC to match DB timestamps
+    const targetDate = new Date(expenseDate + 'T23:59:59Z');
+    // memberships from the API already include userId and username
+    const filtered = (group.memberships || []).filter(m => {
       const joined = new Date(m.joinedAt);
       const left = m.leftAt ? new Date(m.leftAt) : null;
       return joined <= targetDate && (!left || targetDate <= left);
     });
-    
-    const activeUserList = filtered.map(m => users.find(u => u.id === m.userId)).filter(Boolean);
+
+    // Build activeMembers directly from membership data (no user-store lookup needed)
+    const activeUserList = filtered.map(m => ({ id: m.userId, username: m.username }));
     setActiveMembers(activeUserList);
-    
+
     // Auto-select all active members by default
     const ids = activeUserList.map(u => u.id);
     setSelectedSplitIds(ids);
@@ -43,9 +47,20 @@ const AddExpenseForm = ({ groupId, onClose }) => {
       initDetails[id] = '';
     });
     setSplitDetails(initDetails);
-  }, [expenseDate, group, users]);
+  }, [expenseDate, group]);
 
-  if (!group) return null;
+  if (!group) return (
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+        <span className="text-3xl block mb-3">⚠️</span>
+        <h3 className="font-bold text-slate-800 mb-1">No Group Found</h3>
+        <p className="text-sm text-slate-500 mb-4">
+          Your account isn't part of any group yet. Please join or create a group first, or log in as a seeded user (e.g. <strong>aisha@settly.com</strong> / <strong>password123</strong>).
+        </p>
+        <button onClick={onClose} className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-bold">Close</button>
+      </div>
+    </div>
+  );
 
   const handleCheckboxChange = (userId) => {
     if (selectedSplitIds.includes(userId)) {
@@ -62,7 +77,7 @@ const AddExpenseForm = ({ groupId, onClose }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
 
@@ -86,54 +101,58 @@ const AddExpenseForm = ({ groupId, onClose }) => {
       let sum = 0;
       for (const uid of selectedSplitIds) {
         const val = parseFloat(splitDetails[uid] || 0);
-        if (isNaN(val) || val <= 0) {
-          return setFormError('Percentages must be positive numbers');
-        }
+        if (isNaN(val) || val <= 0) return setFormError('Percentages must be positive numbers');
         sum += val;
         finalDetails[uid] = val;
       }
-      if (Math.abs(sum - 100) > 0.01) {
-        return setFormError(`Percentages must sum to exactly 100%. Current sum: ${sum}%`);
-      }
+      if (Math.abs(sum - 100) > 0.01) return setFormError(`Percentages must sum to exactly 100%. Current: ${sum}%`);
     } else if (splitType === 'share') {
       for (const uid of selectedSplitIds) {
         const val = parseFloat(splitDetails[uid] || 0);
-        if (isNaN(val) || val <= 0) {
-          return setFormError('Shares must be positive ratios (e.g. 1, 2)');
-        }
+        if (isNaN(val) || val <= 0) return setFormError('Shares must be positive ratios (e.g. 1, 2)');
         finalDetails[uid] = val;
       }
     } else if (splitType === 'unequal') {
       let totalSplit = 0;
       for (const uid of selectedSplitIds) {
         const val = parseFloat(splitDetails[uid] || 0);
-        if (isNaN(val) || val < 0) {
-          return setFormError('Amounts must be non-negative');
-        }
+        if (isNaN(val) || val < 0) return setFormError('Amounts must be non-negative');
         totalSplit += val;
         finalDetails[uid] = val;
       }
-      
       const enteredAmount = parseFloat(amount);
       const isUSD = currency.toUpperCase() === 'USD';
       if (Math.abs(totalSplit - (enteredAmount * (isUSD ? 83.0 : 1))) > 1.0) {
-        return setFormError(`Sum of unequal shares (₹${totalSplit}) does not match total expense amount (₹${enteredAmount * (isUSD ? 83.0 : 1)})`);
+        return setFormError(`Sum of unequal shares (₹${totalSplit}) does not match total (₹${enteredAmount * (isUSD ? 83.0 : 1)})`);
       }
     }
 
-    dispatch(addExpense({
-      groupId,
-      description,
-      amount: parseFloat(amount),
-      currency,
-      paidById: payerIdNum,
-      expenseDate: new Date(expenseDate).toISOString(),
-      splitType,
-      splitWith: selectedSplitIds,
-      splitDetails: finalDetails
-    }));
+    setSubmitting(true);
+    try {
+      const result = await dispatch(createExpense({
+        groupId: Number(groupId),
+        description,
+        amount: parseFloat(amount),
+        currency,
+        paidById: payerIdNum,
+        expenseDate: new Date(expenseDate).toISOString(),
+        splitType,
+        splitWith: selectedSplitIds,
+        splitDetails: finalDetails
+      }));
 
-    onClose();
+      if (result.meta?.requestStatus === 'rejected') {
+        setFormError(result.payload || 'Failed to add expense. Please try again.');
+        setSubmitting(false);
+      } else {
+        // Refresh the expense list to reflect the new entry
+        dispatch(fetchExpenses(Number(groupId)));
+        onClose();
+      }
+    } catch (err) {
+      setFormError('Unexpected error. Please try again.');
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -278,15 +297,19 @@ const AddExpenseForm = ({ groupId, onClose }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+              disabled={submitting}
+              className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg text-xs font-bold shadow-md shadow-brand/20 cursor-pointer"
+              disabled={submitting}
+              className="px-5 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg text-xs font-bold shadow-md shadow-brand/20 cursor-pointer disabled:opacity-60 flex items-center gap-2"
             >
-              Add Expense
+              {submitting ? (
+                <><span className="animate-spin inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full"></span> Saving...</>
+              ) : 'Add Expense'}
             </button>
           </div>
         </form>

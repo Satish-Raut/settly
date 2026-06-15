@@ -1,17 +1,21 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   createBrowserRouter,
   RouterProvider,
   Navigate,
   Outlet,
 } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchCurrentUser, fetchAllUsers } from './store/slices/authSlice';
+import { fetchGroups } from './store/slices/groupsSlice';
 
 // Pages
 import Home from './pages/Home';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
+import Groups from './pages/Groups';
 import ImportWizard from './pages/ImportWizard';
+import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 
 // ─── Protected Route Wrapper ──────────────────────────────────────────────────
@@ -44,8 +48,16 @@ const router = createBrowserRouter([
         element: <Dashboard />,
       },
       {
+        path: '/groups',
+        element: <Groups />,
+      },
+      {
         path: '/import',
         element: <ImportWizard />,
+      },
+      {
+        path: '/profile',
+        element: <Profile />,
       },
     ],
   },
@@ -58,6 +70,17 @@ const router = createBrowserRouter([
 
 // ─── App Root ─────────────────────────────────────────────────────────────────
 const App = () => {
+  const dispatch = useDispatch();
+  const { token } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (token) {
+      dispatch(fetchCurrentUser());
+      dispatch(fetchGroups());
+      dispatch(fetchAllUsers());
+    }
+  }, [token, dispatch]);
+
   return <RouterProvider router={router} />;
 };
 
