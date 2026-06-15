@@ -36,7 +36,7 @@ const Profile = () => {
           <button onClick={() => navigate('/')} className="text-2xl font-black font-serif text-brand tracking-tight cursor-pointer">
             settly.
           </button>
-          <nav className="flex items-center gap-6 text-sm font-semibold text-slate-500">
+          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-500">
             <button onClick={() => navigate('/dashboard')} className="hover:text-brand transition-colors cursor-pointer">Dashboard</button>
             <button onClick={() => navigate('/groups')} className="hover:text-brand transition-colors cursor-pointer">Groups</button>
             <button onClick={() => navigate('/import')} className="hover:text-brand transition-colors cursor-pointer">CSV Importer</button>
@@ -59,7 +59,7 @@ const Profile = () => {
 
           <div className="px-8 pb-8">
             {/* Avatar overlapping banner */}
-            <div className="flex items-end justify-between -mt-12 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between -mt-12 mb-6 gap-4">
               <div
                 className="w-24 h-24 rounded-2xl flex items-center justify-center text-white text-3xl font-black shadow-xl border-4 border-white"
                 style={{ backgroundColor: avatarColor }}
@@ -68,7 +68,7 @@ const Profile = () => {
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-rose-600 border border-rose-200 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-rose-600 border border-rose-200 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer self-start sm:self-auto"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -92,7 +92,7 @@ const Profile = () => {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {[
             { label: 'Groups Joined', value: totalGroups, icon: '👥', color: 'from-violet-50 to-purple-50 border-violet-100' },
             { label: 'Total Members Across Groups', value: totalMemberships, icon: '🤝', color: 'from-sky-50 to-blue-50 border-sky-100' },
@@ -106,10 +106,10 @@ const Profile = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Account Info */}
-          <div className="col-span-1">
+          <div className="col-span-1 lg:col-span-1">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100">
                 <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">Account Info</h2>
@@ -136,7 +136,7 @@ const Profile = () => {
           </div>
 
           {/* Groups */}
-          <div className="col-span-2">
+          <div className="col-span-1 lg:col-span-2">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">Your Groups</h2>
@@ -214,7 +214,7 @@ const Profile = () => {
               <div className="px-5 py-4 border-b border-slate-100">
                 <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">Quick Actions</h2>
               </div>
-              <div className="p-5 grid grid-cols-2 gap-3">
+              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   { label: 'Go to Dashboard', icon: '📊', path: '/dashboard', color: 'hover:bg-violet-50 hover:border-violet-200' },
                   { label: 'Manage Groups', icon: '👥', path: '/groups', color: 'hover:bg-sky-50 hover:border-sky-200' },
